@@ -21,7 +21,7 @@ def fetch_tables():
     connection = create_connection()
     if connection:
         query = "SHOW TABLES"
-        tables = pd.read_sql(query, connection)
+        tables = pd.read_sql(query, connection)#fetches the query result  into  dataframe
         connection.close()
         return tables.iloc[:, 0].tolist()  # Extract table names
     else:
@@ -61,14 +61,27 @@ def fetch_filtered_data_with_bus_type(table_name, filters):
             conditions.append(f"Route_Name IN ({','.join(['%s'] * len(filters['route_name']))})")
             params.extend(filters["route_name"])
 
+        if filters["Start_of_Journey"]:
+            start_time_min, start_time_max = filters["Start_of_Journey"]
+            conditions.append("CAST(Start_of_Journey AS TIME) BETWEEN %s AND %s")
+            params.extend([start_time_min, start_time_max])
+
+        if filters["End_of_Journey"]:
+            end_time_min, end_time_max = filters["End_of_Journey"]
+            conditions.append("CAST(End_of_Journey AS TIME) BETWEEN %s AND %s")
+            params.extend([end_time_min, end_time_max])
+
+
+            
         if filters["price_range"]:
             min_price, max_price = filters["price_range"]
             conditions.append("Price BETWEEN %s AND %s")
             params.extend([min_price, max_price])
 
         if filters["star_rating"]:
-            conditions.append("Star_Rating >= %s")
-            params.append(filters["star_rating"])
+            min_rating, max_rating = filters["star_rating"]
+            conditions.append("Star_Rating BETWEEN %s AND %s")
+            params.extend([min_rating, max_rating])
 
         if filters["seat_availability"]:
             conditions.append("Seat_Availability >= %s")
@@ -120,10 +133,15 @@ if r == "Home":
             combined_options = [
                 "Sleeper AC", "Sleeper Non-AC", "Seater AC", "Seater Non-AC"
             ]
-            selected_combination = st.multiselect("Select Seat Type Combination", combined_options)
+
             selected_route_name = st.multiselect("Select Route Name", route_name_options)
+            Start_of_Journey = st.slider('Select start time',
+                                 value=(pd.to_datetime('08:00').time(), pd.to_datetime('18:00').time()), format="HH:mm")
+            End_of_Journey = st.slider('Select end time',
+                               value=(pd.to_datetime('10:00').time(), pd.to_datetime('20:00').time()), format="HH:mm")
+            selected_combination = st.multiselect("Select Seat Type Combination", combined_options)
             price_range = st.slider("Select Price Range", 200, 3000, (200, 2000))  # Adjust min/max as needed
-            star_rating = st.slider("Star Rating", 0.0, 5.0, 0.0)
+            star_rating = st.slider("Star Rating", 0.0, 5.0, (0.0,5.0))
             seat_availability = st.slider("Available Seats", 1, 60)
 
             # Define Filters
@@ -131,8 +149,10 @@ if r == "Home":
                 "bus_type": bus_type_options,
                 "route_name": selected_route_name,
                 "price_range": price_range,
-                "star_rating": star_rating if star_rating > 0 else None,
-                "seat_availability": seat_availability
+                "star_rating": star_rating,
+                "seat_availability": seat_availability,
+                "Start_of_Journey":Start_of_Journey,
+                "End_of_Journey":End_of_Journey
             }
 
             # Fetch and Display Filtered Data
