@@ -21,7 +21,7 @@ def fetch_tables():
     connection = create_connection()
     if connection:
         query = "SHOW TABLES"
-        tables = pd.read_sql(query, connection)#fetches the query result  into  dataframe
+        tables = pd.read_sql(query, connection)  # fetches the query result into dataframe
         connection.close()
         return tables.iloc[:, 0].tolist()  # Extract table names
     else:
@@ -71,8 +71,6 @@ def fetch_filtered_data_with_bus_type(table_name, filters):
             conditions.append("CAST(End_of_Journey AS TIME) BETWEEN %s AND %s")
             params.extend([end_time_min, end_time_max])
 
-
-            
         if filters["price_range"]:
             min_price, max_price = filters["price_range"]
             conditions.append("Price BETWEEN %s AND %s")
@@ -136,12 +134,12 @@ if r == "Home":
 
             selected_route_name = st.multiselect("Select Route Name", route_name_options)
             Start_of_Journey = st.slider('Select start time',
-                                 value=(pd.to_datetime('08:00').time(), pd.to_datetime('18:00').time()), format="HH:mm")
+                                         value=(pd.to_datetime('08:00').time(), pd.to_datetime('18:00').time()), format="HH:mm")
             End_of_Journey = st.slider('Select end time',
-                               value=(pd.to_datetime('10:00').time(), pd.to_datetime('20:00').time()), format="HH:mm")
+                                       value=(pd.to_datetime('10:00').time(), pd.to_datetime('20:00').time()), format="HH:mm")
             selected_combination = st.multiselect("Select Seat Type Combination", combined_options)
             price_range = st.slider("Select Price Range", 200, 3000, (200, 2000))  # Adjust min/max as needed
-            star_rating = st.slider("Star Rating", 0.0, 5.0, (0.0,5.0))
+            star_rating = st.slider("Star Rating", 0.0, 5.0, (0.0, 5.0))
             seat_availability = st.slider("Available Seats", 1, 60)
 
             # Define Filters
@@ -151,8 +149,8 @@ if r == "Home":
                 "price_range": price_range,
                 "star_rating": star_rating,
                 "seat_availability": seat_availability,
-                "Start_of_Journey":Start_of_Journey,
-                "End_of_Journey":End_of_Journey
+                "Start_of_Journey": Start_of_Journey,
+                "End_of_Journey": End_of_Journey
             }
 
             # Fetch and Display Filtered Data
@@ -162,15 +160,29 @@ if r == "Home":
                 # Apply additional filtering for combined Bus Type options
                 if selected_combination:
                     def match_combination(row):
-                        seating = "Sleeper" if row["Seating_Type"] == "Sleeper" else "Seater"
-                        comfort = "AC" if row["Comfort_Type"] == "AC" else "Non-AC"
-                        return f"{seating} {comfort}" in selected_combination
+                        # Convert the Bus_Type to lowercase for case-insensitive comparison
+                        bus_type = row["Bus_Type"].lower()
 
+                        # Determine the Seating_Type (Seater or Sleeper) by checking if "seater" or "sleeper" is in Bus_Type
+                        seating = "Sleeper" if "sleeper" in bus_type else "Seater"
+
+                        # Determine the Comfort_Type (AC or Non-AC) by checking if "ac" or "non ac" is in Bus_Type
+                        comfort = "Non-AC" if "non ac" in bus_type else "AC"
+
+                        # Combine the seating and comfort types
+                        bus_combination = f"{seating} {comfort}"
+
+                        # Check if the combination is in the selected combinations, case-insensitive
+                        return bus_combination.lower() in [item.lower() for item in selected_combination]
+
+                    # Apply the match_combination function to filter the data
                     data = data[data.apply(match_combination, axis=1)]
 
+                # Display the filtered data
                 st.subheader(f"Filtered Results from {selected_table}")
                 st.write(f"Number of records: {len(data)}")
                 st.dataframe(data)
+
             else:
                 st.warning("No data found with the selected filters.")
     else:
@@ -178,5 +190,4 @@ if r == "Home":
 
 elif r == "About us":
     st.title("About Us")
-    st.write("TThis Streamlit app connects to a MySQL database and allows users to explore bus data from the redbus database. Users can dynamically filter data based on various parameters such as bus type, route name, price range, star rating, and seat availability. The app also provides options to combine bus types (e.g., Sleeper AC, Seater Non-AC) for more precise filtering. The results are displayed in an interactive table, offering insights into the available bus services based on user-selected criteria.")
-
+    st.write("This Streamlit app connects to a MySQL database and allows users to explore bus data from the RedBus database. Users can dynamically filter data based on various parameters such as bus type, route name, price range, star rating, and seat availability. The app also provides options to combine bus types (e.g., Sleeper AC, Seater Non-AC) for more precise filtering. The results are displayed in an interactive table, offering insights into the available bus services based on user-selected criteria.")
