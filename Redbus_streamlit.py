@@ -122,7 +122,11 @@ if r == "Home":
         selected_table = st.selectbox("Select a state bus detail", tables)
 
         if selected_table:
+            
             # Fetch filter options
+            route_name_options = get_filter_options("Route_Name", selected_table)
+            selected_route_name = st.multiselect("Select Route Name", route_name_options)
+
             bus_type_groups = {
             "AC Sleeper Buses": [
                 "A/C Sleeper (2+1)", "Volvo Multi Axle B9R A/C Sleeper (2+1)",
@@ -177,17 +181,15 @@ if r == "Home":
             # Translate selected group names into actual bus type values
             bus_type_values = [bus for group in selected_bus_type for bus in bus_type_groups[group]]
 
-            route_name_options = get_filter_options("Route_Name", selected_table)
-            selected_route_name = st.multiselect("Select Route Name", route_name_options)
 
             Start_of_Journey = st.slider(
                 "Select start time",
-                value=(pd.to_datetime('08:00').time(), pd.to_datetime('18:00').time()), 
+                value=(pd.to_datetime('05:00').time(), pd.to_datetime('20:00').time()), 
                 format="HH:mm"
             )
             End_of_Journey = st.slider(
                 "Select end time",
-                value=(pd.to_datetime('10:00').time(), pd.to_datetime('20:00').time()), 
+                value=(pd.to_datetime('05:00').time(), pd.to_datetime('20:00').time()), 
                 format="HH:mm"
             )
 
